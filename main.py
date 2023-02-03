@@ -1,39 +1,80 @@
 #
 # Принцип работы программы:
-#   1. смотрим какие есть папки с файлами, создаём списки, вложенные и передаём дальше
+#   1. смотрим какие есть папки с файлами, создаём списки и передаём дальше
 #   2. проверяем файлы в папке на то устраивают они нас или нет, выкидываем ненужные
 #   3. создаём файл  консолидирующие каждую папку
 #   4. заполняем файл данными, формулами, либо обычной суммой, 
 #   5. .... далее пока дожить надо
 #
-import os, openpyxl
+import os, openpyxl, joblib, time
+
+start = time.time()
 
 logs = open("logs.txt", "a")
 logs.truncate(0)
 
+
+def getXlsxList(dir):
+    #
+    # input directory outpoot list all xlsx files
+    #
+    file_list = list()
+    for address, dirs, files in os.walk(dir):
+        for name in files:
+            if name.endswith('.xlsx'):
+                file_list.append(os.path.join(address,name))
+    return file_list
+
+def normalize(none):
+    pass
+
+def checkFiles(all_file, *args):
+    #
+    # input list of xlsx files and filter functions
+    # outut current files list
+    #
+#    new_list = joblib.Parallel(n_jobs=-1, verbose=0, prefer='threads')(joblib.delayed(filter)(filter_function, all_file) for filter_function in args)
+    new_list = all_file
+    for filter_function in args:
+        new_list = list(filter(filter_function, new_list))
+#        new_list = list(joblib.Parallel(n_jobs=-1, verbose=0, prefer='threads')(joblib.delayed(filter)(filter_function, curent_file) for curent_file in new_list))
+#        new_list = joblib.Parallel(n_jobs=-1,  prefer='threads')(joblib.delayed(filter_function)(file_way) for file_way in new_list)
+    return new_list
+
+def filterHaveSheet(file_path):
+    #
+    # input file path, then open file and check
+    # all sheet have in workbook
+    # output boolean
+    #
+    needSheet = ['Титульный лист',
+                 '1. Сведения об ОО',
+                 '2. Сведения об обучающихся',
+                 '3. Сведения о режиме работы ГПД',
+                 '4. Сведения о помещениях',
+                 '5. Сведения о кадрах',
+                 '6. Финансирование']
+    wb = openpyxl.load_workbook(file_path, keep_vba=False, read_only=True)
+    if set(needSheet).issubset(wb.sheetnames):
+        return True
+    else:
+        logs.write(f'\nВ файле отсутствуют нужные страницы: {file_path}')
+        return False
+
+
+
 # 1.
-def getFileList(dir): # отдаю функции список файлов и папок
-    fileList = list() # создаю пустой список
-    if not len(dir): # если полученный ранее список пустой
-        return fileList # то возвращаю созданный мной пустой список
-    else: # если список не пустые
-        if os.path.isfile(dir[0]) and dir[0].endswith('.xlsx'): # то беру первый элимент и проверяю excel файл он?
-            fileList.append(dir.pop(0)) # если так то удаю из полученного списка и вношу в пустой
-        elif os.path.isdir(dir[0]): # если это не excel файл
-            getFileList(os.listdir(dir.pop(0))) # то вызываю себяже и отдаю себе перый элемент списка
-        else:
-            dir.pop(0) # удаляю элемент
-            getFileList(dir) # вызываю функцию без удалённого ранее элемента
-
-
-directorylist = getFileList(os.listdir())
-
-#directory = [item for item in os.listdir() if os.path.isdir(item) and len([file for file in os.listdir(os.path.join(os.getcwd(),item) if file.endwith('.xlsx'))])]
-#item.endswith('.xlsx')
-#logs.write(f"В работу попадают следующие папки {directory}")
+file_list = getXlsxList(os.getcwd())
+logs.write(f"\nНайдены следующие файлы: {file_list}")
 # 2.
-
+filteredExcelFileList = checkFiles(file_list, filterHaveSheet)
+logs.write(f"\nБудут использоваться файлы {filteredExcelFileList}")
+print(filteredExcelFileList)
 # 3.
 
 
 logs.close # close logs file
+#abra = input("press any button")
+end = time.time()
+
+print(end - start)
