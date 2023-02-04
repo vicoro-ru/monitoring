@@ -6,7 +6,7 @@
 #   4. заполняем файл данными, формулами, либо обычной суммой, 
 #   5. .... далее пока дожить надо
 #
-import os, openpyxl, joblib, time
+import os, openpyxl, joblib, time, yaml
 
 start = time.time()
 
@@ -33,12 +33,9 @@ def checkFiles(all_file, *args):
     # input list of xlsx files and filter functions
     # outut current files list
     #
-#    new_list = joblib.Parallel(n_jobs=-1, verbose=0, prefer='threads')(joblib.delayed(filter)(filter_function, all_file) for filter_function in args)
     new_list = all_file
     for filter_function in args:
         new_list = list(filter(filter_function, new_list))
-#        new_list = list(joblib.Parallel(n_jobs=-1, verbose=0, prefer='threads')(joblib.delayed(filter)(filter_function, curent_file) for curent_file in new_list))
-#        new_list = joblib.Parallel(n_jobs=-1,  prefer='threads')(joblib.delayed(filter_function)(file_way) for file_way in new_list)
     return new_list
 
 def filterHaveSheet(file_path):
@@ -56,9 +53,11 @@ def filterHaveSheet(file_path):
                  '6. Финансирование']
     wb = openpyxl.load_workbook(file_path, keep_vba=False, read_only=True)
     if set(needSheet).issubset(wb.sheetnames):
+        wb.close()
         return True
     else:
         logs.write(f'\nВ файле отсутствуют нужные страницы: {file_path}')
+        wb.close()
         return False
 
 
