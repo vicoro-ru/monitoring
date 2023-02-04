@@ -2,7 +2,7 @@ legend: | # multi line string
     Программа для сведения итогов одиноковых файлов
     выберите пункт меню для работы:
 
-folder: none # variable
+folder: null # variable
 
 filter: # dictionary
     sheet: #l ist

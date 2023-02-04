@@ -8,16 +8,18 @@
 #
 import os, openpyxl, joblib, time, yaml
 
-start = time.time()
 
-logs = open("logs.txt", "a")
-logs.truncate(0)
-
-
-def getXlsxList(dir):
-    #
-    # input directory outpoot list all xlsx files
-    #
+def read_config(configname):
+    """
+    Read configuration yaml file
+    """
+    with open(configname, "r", encoding="utf-8") as conf_file:
+        return yaml.safe_load(conf_file)
+    
+def get_xlsx_list(dir):
+    """
+    input directory outpoot list all xlsx files
+    """
     file_list = list()
     for address, dirs, files in os.walk(dir):
         for name in files:
@@ -25,55 +27,63 @@ def getXlsxList(dir):
                 file_list.append(os.path.join(address,name))
     return file_list
 
-def normalize(none):
+def normalize():
+    """
+    normalize excel file
+    """
     pass
 
-def checkFiles(all_file, *args):
-    #
-    # input list of xlsx files and filter functions
-    # outut current files list
-    #
+def check_files(all_file, *args):
+    """
+    input list of xlsx files and filter functions
+    outut current files list
+    """
     new_list = all_file
     for filter_function in args:
         new_list = list(filter(filter_function, new_list))
     return new_list
 
-def filterHaveSheet(file_path):
-    #
-    # input file path, then open file and check
-    # all sheet have in workbook
-    # output boolean
-    #
-    needSheet = ['Титульный лист',
-                 '1. Сведения об ОО',
-                 '2. Сведения об обучающихся',
-                 '3. Сведения о режиме работы ГПД',
-                 '4. Сведения о помещениях',
-                 '5. Сведения о кадрах',
-                 '6. Финансирование']
-    wb = openpyxl.load_workbook(file_path, keep_vba=False, read_only=True)
-    if set(needSheet).issubset(wb.sheetnames):
-        wb.close()
+def filter_have_sheet(file_path):
+    """
+    input file path, then open file and check
+    all sheet have in workbook
+    output boolean
+    """
+    need_sheet = configuration['filter']['sheet'] if configuration['filter']['sheet'] else []
+    work_book = openpyxl.load_workbook(file_path, keep_vba=False, read_only=True)
+    if set(need_sheet).issubset(work_book.sheetnames):
+        work_book.close()
         return True
-    else:
-        logs.write(f'\nВ файле отсутствуют нужные страницы: {file_path}')
-        wb.close()
-        return False
+    #logs.write(f'\nВ файле отсутствуют нужные страницы: {file_path}')
+    work_book.close()
+    return False
+
+configuration = read_config("configuration.yaml")
+
+def main():
+    """
+    Empty documentation
+    """
+    # Debug
+    start = time.time()
+    # 0. Читаем настройки программы и открывает логи для занесения данных
+    logs = open("logs.txt", "a", encoding="utf-8")
+    logs.truncate(0)
+    # 1. Смотрим все файлы в указанной дериктории
+    file_list = get_xlsx_list(configuration['folder'] != None if configuration['folder'] else os.getcwd())
+    logs.write(f"\nНайдены следующие файлы: {file_list}")
+    # 2.
+    filteredExcelFileList = check_files(file_list, filter_have_sheet)
+    logs.write(f"\nБудут использоваться файлы {filteredExcelFileList}")
+    print(filteredExcelFileList)
+    # 3.
 
 
+    logs.close # close logs file
+    #abra = input("press any button")
+    end = time.time()
 
-# 1.
-file_list = getXlsxList(os.getcwd())
-logs.write(f"\nНайдены следующие файлы: {file_list}")
-# 2.
-filteredExcelFileList = checkFiles(file_list, filterHaveSheet)
-logs.write(f"\nБудут использоваться файлы {filteredExcelFileList}")
-print(filteredExcelFileList)
-# 3.
+    print(end - start)
 
-
-logs.close # close logs file
-#abra = input("press any button")
-end = time.time()
-
-print(end - start)
+if __name__ == "__main__":
+    main()
