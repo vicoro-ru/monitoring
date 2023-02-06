@@ -6,7 +6,7 @@
 #   4. заполняем файл данными, формулами, либо обычной суммой, 
 #   5. .... далее пока дожить надо
 #
-import os, openpyxl, joblib, time, yaml
+import os, openpyxl, time, yaml
 
 
 def read_config(configname):
@@ -26,6 +26,30 @@ def get_xlsx_list(dir):
             if name.endswith('.xlsx'):
                 file_list.append(os.path.join(address,name))
     return file_list
+
+def find_last_row(workseet):
+    """
+    show last row
+    """
+    pass
+
+def find_correct_last_row(worksheet):
+    """
+    get sheet
+    return last row number
+    """
+    empty_row_successively = 0
+    last_filled_row = 0
+    for index, row in enumerate(worksheet.values):
+        corrent_row_empty = row.count(None) == len(row)
+        if corrent_row_empty:
+            empty_row_successively += 1
+        else:
+            empty_row_successively = 0
+            last_filled_row = index
+        if empty_row_successively >= 5:
+            break
+    return last_filled_row
 
 def normalize():
     """
