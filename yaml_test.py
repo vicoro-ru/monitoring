@@ -1,4 +1,5 @@
 import openpyxl
+from time import time
 
 def find_correct_last_row(in_worksheet):
     """
@@ -17,7 +18,7 @@ def find_correct_last_row(in_worksheet):
             break
     return last_filled_row
 
-file = 'C:\\Users\\alist\\OneDrive\\Документы\\osokin\\monitoring\\babaevo\\school3.xlsx'
+file = 'school3.xlsx'
 workbook =  openpyxl.load_workbook(file, keep_vba=False, read_only=True)
 demension = workbook['5. Сведения о кадрах'].calculate_dimension()
 print(demension)
@@ -31,6 +32,15 @@ for iteration_worksheet in workbook.worksheets:
 workbook.close()
 
 write_workbook = openpyxl.load_workbook(file, read_only=True)
-write_worksheet = write_workbook['5. Сведения о кадрах']
-help(write_worksheet.values)
-write_workbook.close()
+write_worksheet = write_workbook['2. Сведения об обучающихся']
+#new_workbook = openpyxl.Workbook(write_only=True)
+#new_workbook.create_sheet(title="copy_sheet")
+#new_workbook.save(time(),'.xlsx')
+#help(write_worksheet.values)
+#help(write_worksheet.cell(2,2).style_array)
+#help(write_worksheet.iter_rows)
+for item in write_worksheet.iter_rows(3):
+    print(item)
+    help(item)
+    break
+write_workbook.close() 
