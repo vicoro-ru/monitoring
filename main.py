@@ -1,11 +1,3 @@
-#
-# Принцип работы программы:
-#   1. смотрим какие есть папки с файлами, создаём списки и передаём дальше
-#   2. проверяем файлы в папке на то устраивают они нас или нет, выкидываем ненужные
-#   3. создаём файл  консолидирующие каждую папку
-#   4. заполняем файл данными, формулами, либо обычной суммой, 
-#   5. .... далее пока дожить надо
-#
 import os, openpyxl, time, yaml
 
 
@@ -40,7 +32,7 @@ def find_correct_last_row(worksheet):
     """
     empty_row_successively = 0
     last_filled_row = 0
-    for index, row in enumerate(worksheet.values):
+    for index, row in enumerate(worksheet.values, start=1):
         corrent_row_empty = row.count(None) == len(row)
         if corrent_row_empty:
             empty_row_successively += 1
@@ -50,6 +42,17 @@ def find_correct_last_row(worksheet):
         if empty_row_successively >= 5:
             break
     return last_filled_row
+
+def remove_exscess_row(workbook):
+    """
+    Input openpyxl.workbook
+    then delete all excess row
+    dont save document
+    """
+    for iteration_worksheet in workbook.worksheets:
+        first_empty_row = find_correct_last_row(iteration_worksheet) + 1
+        max_row = iteration_worksheet.max_row
+        iteration_worksheet.delete_rows(first_empty_row, max_row-first_empty_row+1)
 
 def normalize():
     """
@@ -96,7 +99,7 @@ def main():
     # 1. Смотрим все файлы в указанной дериктории
     file_list = get_xlsx_list(configuration['folder'] != None if configuration['folder'] else os.getcwd())
     logs.write(f"\nНайдены следующие файлы: {file_list}")
-    # 2.
+    # 2. Отфильтровываем неподходящие (есть нужные страницы или нет, большой файл или нет)
     filteredExcelFileList = check_files(file_list, filter_have_sheet)
     logs.write(f"\nБудут использоваться файлы {filteredExcelFileList}")
     print(filteredExcelFileList)

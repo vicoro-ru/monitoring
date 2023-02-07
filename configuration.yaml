@@ -3,6 +3,7 @@ legend: | # multi line string
     выберите пункт меню для работы:
 
 folder: null # variable
+try_normalise: True
 
 filter: # dictionary
     sheet: #l ist
