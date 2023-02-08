@@ -67,11 +67,45 @@ file_list = ['C:\\Users\\alist\\OneDrive\\Документы\\osokin\\monitoring
 
 new_list  = [os.path.split(file) for file in file_list]
 print(new_list)
-print(os.path.abspath(file_list[0]))
-print(os.path.basename(file_list[0]))
+print(os.path.join(new_list[0][0], new_list[0][1]))
+#print(os.path.abspath(file_list[0]))
+#print(os.path.basename(file_list[0]))
 #print(os.path.commonpath(file_list[0]))
-print(os.path.dirname(file_list[0]))
-path_list = sorted(list({ os.path.dirname(file) for file in file_list }), key=len, reverse=True)
-print(path_list)
-for path in path_list:
-    
+#print(os.path.dirname(file_list[0]))
+
+def get_directory_sorted_list(dir):
+    """
+    Take list of currect file
+    return sorted list dirctory
+    """
+    path_list = sorted(list({ os.path.dirname(file) for file in dir }), key=len, reverse=True)
+    return path_list
+def get_current_file_from_directory(file_list, dir_name):
+    """
+    return all needed file to work
+    """
+    work_file_list = list()
+    for file in file_list:
+        if os.path.split(file)[0] == dir_name:
+            work_file_list.append(file)
+    return work_file_list
+#input('Press Enter to Continue...')
+#print(path_list)
+example_file = openpyxl.load_workbook(filename="example.xlsx", read_only=True)
+sheets_list = example_file.sheetnames
+for path in get_directory_sorted_list(file_list):
+    current_dir_file = get_current_file_from_directory(file_list, path)
+    new_file = openpyxl.Workbook(write_only=True)
+    help(new_file)
+    for sheet in sheets_list:
+        if not hasattr(new_file, sheet):
+            new_file.create_sheet(sheet)
+        current_sheet = example_file[sheet]
+        for row in current_sheet.rows:
+            for cell in row:
+                if cell is not None:
+                    new_file(sheet).append(cell)
+
+    new_file.save(f"file_name_{time()}.xlsx")
+    new_file.close()
+example_file.close()
