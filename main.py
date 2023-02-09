@@ -54,12 +54,32 @@ def remove_exscess_row(workbook):
         max_row = iteration_worksheet.max_row
         iteration_worksheet.delete_rows(first_empty_row, max_row-first_empty_row+1)
 
-def normalize():
+def cell_strip_space(workbook):
+    """
+    Cleare all empty cell, replace them None value
+    """
+    for iteration_worksheet in workbook:
+        for row in iteration_worksheet.rows:
+            for cell in row:
+                if isinstance(cell.value, str):
+                    if len(cell.value.strip()) == 0:
+                        cell.value = None
+                    
+
+def normalize(file_list):
     """
     normalize excel file
     """
-    pass
-
+    for file in file_list:
+        if os.stat(file).st_size / (1024*1024) > 3:
+            wb = openpyxl.load_workbook(file)
+            remove_exscess_row(wb)
+            wb.save(file)
+            wb.close()
+        wb = openpyxl.load_workbook(file)
+        cell_strip_space(wb)
+        wb.save(file)
+        wb.close()
 def check_files(all_file, *args):
     """
     input list of xlsx files and filter functions
@@ -85,6 +105,131 @@ def filter_have_sheet(file_path):
     work_book.close()
     return False
 
+def dialog_menu(value):
+    """
+    """
+def get_directory_sorted_list(dir):
+    """
+    Take list of currect file
+    return sorted list dirctory
+    """
+    path_list = sorted(list({ os.path.dirname(file) for file in dir }), key=len, reverse=True)
+    return path_list
+def get_current_file_from_directory(file_list, dir_name):
+    """
+    return all needed file to work
+    """
+    work_file_list = list()
+    for file in file_list:
+        if os.path.split(file)[0] == dir_name:
+            work_file_list.append(file)
+    return work_file_list
+
+def create_needed_sheet(workbook_name, sheet_list):
+    """
+    Create page if then not have
+    """
+    book = openpyxl.load_workbook(workbook_name)
+    for sheet_name in sheet_list:
+        if not hasattr(book, sheet_name):
+            book.create_sheet(sheet_name)
+    del(book['Sheet'])
+    book.save(workbook_name)
+    book.close()
+
+def create_needed_sheets(workbook_list, sheet_list):
+    """
+    """
+    pass
+
+def file_generator(file_list):
+    """
+    Create file by list
+    """
+    created_file = list()
+    for file in file_list:
+        if not os.path.exists(f'{file}.xlsx'):
+            new_book = openpyxl.Workbook()
+            new_book.save(f'{file}.xlsx')
+            new_book.close()
+            created_file.append(f'{file}.xlsx')
+    return created_file
+def create_sheet_content(destination_file, source_files):
+    """
+    """
+    dest_file = openpyxl.load_workbook(destination_file)
+    exam_file = openpyxl.load_workbook('example.xlsx')
+    for work_sheet in dest_file.worksheets:
+        for row in exam_file[work_sheet.title].rows:
+            work_sheet.append([add_data_title_sheet(cell, source_files) if work_sheet.title == "Титульный лист" else add_data_to_cell(cell, source_files) for cell in row])
+    dest_file.save(destination_file)
+    dest_file.close()
+    exam_file.close()
+
+def make_sheet_style(destination_file):
+    """
+    """
+    dest_file = openpyxl.load_workbook(destination_file)
+    exam_file = openpyxl.load_workbook('example.xlsx')
+    for work_sheet in dest_file.worksheets:
+        for row in exam_file[work_sheet.title].rows:
+            for cell in row:
+                if cell.has_style:
+                    pass
+    dest_file.save(destination_file)
+    dest_file.close()
+    exam_file.close()
+def add_data_title_sheet(cell, source_files):
+    """
+    """
+    data_cell = None
+    if isinstance(cell.value, str):
+        data_cell = cell.value
+    else:
+        data_cell = "="
+        page_title = cell.parent.title
+        for address in source_files:
+            if data_cell[-1] != "=":
+                data_cell += "&\" \"&"
+            data_cell += "\'"
+            data_cell += os.path.dirname(address)
+            data_cell += os.sep
+            data_cell += "["
+            data_cell += os.path.basename(address)
+            data_cell += "]"
+            data_cell += page_title
+            data_cell += "\'"
+            data_cell += "!"
+            data_cell += cell.coordinate
+    return data_cell
+
+
+
+def add_data_to_cell(cell, source_files):
+    """
+    """
+    data_cell = None
+    if isinstance(cell.value, str):
+        data_cell = cell.value
+    else:
+        data_cell = "="
+        page_title = cell.parent.title
+        for address in source_files:
+            if data_cell[-1] != "=":
+                data_cell += "+"
+            data_cell += "\'"
+            data_cell += os.path.dirname(address)
+            data_cell += os.sep
+            data_cell += "["
+            data_cell += os.path.basename(address)
+            data_cell += "]"
+            data_cell += page_title
+            data_cell += "\'"
+            data_cell += "!"
+            data_cell += cell.coordinate
+    return data_cell
+
+
 configuration = read_config("configuration.yaml")
 
 def main():
@@ -103,8 +248,18 @@ def main():
     filteredExcelFileList = check_files(file_list, filter_have_sheet)
     logs.write(f"\nБудут использоваться файлы {filteredExcelFileList}")
     print(filteredExcelFileList)
+    # 2.5
+    normalize(filteredExcelFileList)
     # 3.
-
+    dir_list = get_directory_sorted_list(filteredExcelFileList)
+    example_file = openpyxl.load_workbook(filename="example.xlsx", read_only=True)
+    example_file.close()
+    sheet_names = example_file.sheetnames
+    created_file = file_generator(dir_list)
+    for workbook in created_file:
+        create_needed_sheet(workbook,sheet_names)
+        directory_needed_files = get_current_file_from_directory(filteredExcelFileList, os.path.abspath(workbook[:-5]))
+        create_sheet_content(workbook, directory_needed_files)
 
     logs.close # close logs file
     #abra = input("press any button")

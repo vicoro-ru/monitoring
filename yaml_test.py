@@ -73,6 +73,9 @@ print(os.path.join(new_list[0][0], new_list[0][1]))
 #print(os.path.commonpath(file_list[0]))
 #print(os.path.dirname(file_list[0]))
 
+def dialog_menu(value):
+    """
+    """
 def get_directory_sorted_list(dir):
     """
     Take list of currect file
@@ -89,23 +92,94 @@ def get_current_file_from_directory(file_list, dir_name):
         if os.path.split(file)[0] == dir_name:
             work_file_list.append(file)
     return work_file_list
-#input('Press Enter to Continue...')
-#print(path_list)
-example_file = openpyxl.load_workbook(filename="example.xlsx", read_only=True)
-sheets_list = example_file.sheetnames
-for path in get_directory_sorted_list(file_list):
-    current_dir_file = get_current_file_from_directory(file_list, path)
-    new_file = openpyxl.Workbook(write_only=True)
-    help(new_file)
-    for sheet in sheets_list:
-        if not hasattr(new_file, sheet):
-            new_file.create_sheet(sheet)
-        current_sheet = example_file[sheet]
-        for row in current_sheet.rows:
-            for cell in row:
-                if cell is not None:
-                    new_file(sheet).append(cell)
 
-    new_file.save(f"file_name_{time()}.xlsx")
-    new_file.close()
+def create_needed_sheet(workbook_name, sheet_list):
+    """
+    Create page if then not have
+    """
+    book = openpyxl.load_workbook(workbook)
+    for sheet_name in sheet_list:
+        if not hasattr(book, sheet_name):
+            book.create_sheet(sheet_name)
+    del(book['Sheet'])
+    book.save(workbook)
+    book.close()
+def create_needed_sheets(workbook_list, sheet_list):
+    """
+    """
+    pass
+def file_generator(file_list):
+    """
+    Create file by list
+    """
+    created_file = list()
+    for file in file_list:
+        if not os.path.exists(f'{file}.xlsx'):
+            new_book = openpyxl.Workbook()
+            new_book.save(f'{file}.xlsx')
+            new_book.close()
+            created_file.append(f'{file}.xlsx')
+    return created_file
+def create_sheet_content(destination_file, source_files):
+    """
+    """
+    dest_file = openpyxl.load_workbook(destination_file)
+    exam_file = openpyxl.load_workbook('example.xlsx')
+    for work_sheet in dest_file.worksheets:
+        for row in exam_file[work_sheet.title].rows:
+            work_sheet.append([add_data_to_cell(cell, source_files) for cell in row])
+    dest_file.save(destination_file)
+    dest_file.close()
+    exam_file.close()
+
+def make_sheet_style(destination_file):
+    """
+    """
+    dest_file = openpyxl.load_workbook(destination_file)
+    exam_file = openpyxl.load_workbook('example.xlsx')
+    for work_sheet in dest_file.worksheets:
+        for row in exam_file[work_sheet.title].rows:
+            for cell in row:
+                if cell.has_style:
+                    pass
+    dest_file.save(destination_file)
+    dest_file.close()
+    exam_file.close()
+
+def add_data_to_cell(cell, source_files):
+    """
+    """
+    data_cell = None
+    if isinstance(cell.value, str):
+        data_cell = cell.value
+    else:
+        data_cell = "="
+        page_title = cell.parent.title
+        for address in source_files:
+            if data_cell[-1] != "=":
+                data_cell += "+"
+            data_cell += "\'"
+            data_cell += os.path.dirname(address)
+            data_cell += os.sep
+            data_cell += "["
+            data_cell += os.path.basename(address)
+            data_cell += "]"
+            data_cell += page_title
+            data_cell += "\'"
+            data_cell += "!"
+            data_cell += cell.coordinate
+    return data_cell
+
+dir_list = get_directory_sorted_list(file_list)
+example_file = openpyxl.load_workbook(filename="example.xlsx", read_only=True)
 example_file.close()
+sheet_names = example_file.sheetnames
+created_file = file_generator(dir_list)
+for workbook in created_file:
+    create_needed_sheet(workbook,sheet_names)
+    directory_needed_files = get_current_file_from_directory(file_list, os.path.abspath(workbook[:-5]))
+#    create_sheet_content(workbook, directory_needed_files)
+
+
+
+input('Press Enter to Continue...')
